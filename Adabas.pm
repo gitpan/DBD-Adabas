@@ -1,4 +1,4 @@
-# $Id: Adabas.pm,v 1.2 1998/07/14 10:55:08 joe Exp joe $
+# $Id: Adabas.pm,v 1.1 1998/08/20 11:31:14 joe Exp $
 #
 # Copyright (c) 1994,1995,1996,1998  Tim Bunce
 # portions Copyright (c) 1997,1998   Jeff Urlwin
@@ -9,7 +9,7 @@
 
 require 5.004;
 
-$DBD::Adabas::VERSION = '0.19';
+$DBD::Adabas::VERSION = '0.20';
 
 {
     package DBD::Adabas;
@@ -19,8 +19,7 @@ $DBD::Adabas::VERSION = '0.19';
 
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.19';
-    my $Revision = substr(q$Revision: 1.10 $, 10);
+    my $Revision = substr(q$Revision: 1.1 $, 10);
 
     require_version DBI 0.86;
 
@@ -61,6 +60,8 @@ $DBD::Adabas::VERSION = '0.19';
     sub connect {
 	my $drh = shift;
 	my($dbname, $user, $auth)= @_;
+	$user = '' unless defined $user;
+	$auth = '' unless defined $auth;
 
 	# create a 'blank' dbh
 	my $this = DBI::_new_dbh($drh, {
@@ -75,6 +76,17 @@ $DBD::Adabas::VERSION = '0.19';
 	DBD::Adabas::db::_login($this, $dbname, $user, $auth) or return undef;
 
 	$this;
+    }
+
+    sub type_info_all {
+	my ($dbh, $sqltype) = @_;
+	my $sth = DBI::_new_sth($dbh, { 'Statement' => "SQLGetTypeInfo" });
+	_GetTypeInfo($dbh, $sth, $sqltype) or return undef;
+	my $info = $sth->fetchall_arrayref;
+	unshift @$info, {
+	    map { ($sth->{NAME}->[$_] => $_) } 0..$sth->{NUM_OF_FIELDS}-1
+	};
+	return $info;
     }
 
 }
@@ -115,16 +127,15 @@ $DBD::Adabas::VERSION = '0.19';
     }
 
 
-    sub tables {
+    sub table_info {
 	my($dbh) = @_;		# XXX add qualification
 
 	# create a "blank" statement handle
 	my $sth = DBI::_new_sth($dbh, { 'Statement' => "SQLTables" });
 
-	# XXX use qaulification(s) (qual, schema, etc?) here...
+	# XXX use qualification(s) (qual, schema, etc?) here...
 	DBD::Adabas::st::_tables($dbh,$sth, "")
 		or return undef;
-
 	$sth;
     }
 
@@ -203,11 +214,22 @@ DBD::Adabas - Adabas Driver for DBI
 
   $dbh = DBI->connect('dbi:Adabas:DSN', 'user', 'password');
 
-see DBI for more information.
+See L<DBI> for more information.
 
 =head1 DESCRIPTION
 
 =head2 Recent Updates
+
+=item DBD::ODBC 0.20
+
+SQLColAttributes fixes for SQL Server and MySQL. Fixed tables method
+by renaming to new table_info method. Added new tyoe_info_all method.
+Improved Makefile.PL support for Adabase.
+
+=item DBD::ODBC 0.19
+
+Added iODBC source code to distribution.Fall-back to using iODBC header
+files in some cases.
 
 =item DBD::Adabas 0.18
 

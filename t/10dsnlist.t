@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 #
-#   $Id: 10dsnlist.t,v 1.1 1998/04/22 17:42:33 joe Exp $
+#   $Id: 10dsnlist.t,v 1.1 1998/08/20 11:31:14 joe Exp $
 #
 #   This test creates a database and drops it. Should be executed
 #   after listdsn.
@@ -20,7 +20,7 @@ foreach $file ("lib.pl", "t/lib.pl") {
 	last;
     }
 }
-if ($mdriver eq 'pNET'  ||  $mdriver eq 'Adabas') {
+if ($mdriver eq 'pNET') {
     print "1..0\n";
     exit 0;
 }

@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -sw
 #
-# $Id: Makefile.PL,v 1.2 1998/07/14 10:55:08 joe Exp joe $
+# $Id: Makefile.PL,v 1.1 1998/08/20 11:31:14 joe Exp $
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
@@ -11,7 +11,7 @@ use ExtUtils::MakeMaker 5.16, qw(&WriteMakefile $Verbose);
 use File::Basename;
 use Getopt::Long;
 
-use DBI 0.93;		# must be installed first
+use DBI 1.00;		# must be installed first
 use DBI::DBD;
 use strict;
 
@@ -35,7 +35,7 @@ my %opts =
 );
 if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
     $opts{AUTHOR} = 'Tim Bunce and Jeff Urlwin (dbi-users@fugue.com)';
-    $opts{ABSTRACT_FROM} = 'ODBC driver for the DBI module.';
+    $opts{ABSTRACT} = 'ODBC driver for the DBI module.';
     $opts{PREREQ_PM} = { DBI => 0 };
     $opts{CAPI} = 'TRUE' if $Config{archname} =~ /-object\b/i;
 }
@@ -73,7 +73,10 @@ if ($^O eq 'MSWin32') {
     print SQLH "#include <sql.h> \n#include <sqlext.h>\n";
 }
 else {
-    my $odbchome = $::opt_o || $ENV{DBROOT} || $ENV{ODBCHOME};
+    # for Adabas
+    $ENV{ODBCHOME} = $ENV{DBROOT} if $ENV{DBROOT} && -f "$ENV{DBROOT}/lib/odbclib.a";
+
+    my $odbchome = $::opt_o || $ENV{ODBCHOME};
     unless ($odbchome) {
 	print "\n";
 	print "The DBD::ODBC module needs to link with an ODBC 'Driver Manager'.\n";

@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 #
-#   $Id: 20createdrop.t,v 1.1 1998/04/22 17:42:33 joe Exp $
+#   $Id: 20createdrop.t,v 1.1 1998/08/20 11:31:14 joe Exp $
 #
 #   This is a skeleton test. For writing new tests, take this file
 #   and modify/extend it.

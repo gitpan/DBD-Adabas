@@ -1,5 +1,5 @@
 /*
- * $Id: dbdimp.h,v 1.2 1998/07/14 10:55:08 joe Exp joe $
+ * $Id: dbdimp.h,v 1.1 1998/08/20 11:31:14 joe Exp $
  * Copyright (c) 1997 Jeff Urlwin
  * portions Copyright (c) 1997  Thomas K. Wenrich
  * portions Copyright (c) 1994,1995,1996  Tim Bunce

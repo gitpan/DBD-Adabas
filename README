@@ -2,7 +2,7 @@ DBD::Adabas -- DBD module interfacing the Adabas D database.
 
 This module is based on DBD::ODBC:
 
-   $Id: README,v 1.5 1998/08/08 16:58:30 timbo Exp $
+   $Id: README,v 1.1 1998/08/20 11:31:14 joe Exp $
 
    Copyright (c) 1994,1995,1996,1997,1998  Tim Bunce
    portions Copyright (c) 1997,1998 Jeff Urlwin

@@ -1,5 +1,5 @@
 /*
- * $Id: Adabas.h,v 1.2 1998/07/14 10:55:08 joe Exp joe $
+ * $Id: Adabas.h,v 1.1 1998/08/20 11:31:14 joe Exp $
  * Copyright (c) 1994,1995,1996,1997  Tim Bunce
  *
  * You may distribute under the terms of either the GNU General Public

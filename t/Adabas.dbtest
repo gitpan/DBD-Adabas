@@ -1,6 +1,6 @@
 # Hej, Emacs, give us -*- perl -*- mode here!
 #
-#   $Id: Adabas.dbtest,v 1.1 1998/04/22 17:42:33 joe Exp $
+#   $Id: Adabas.dbtest,v 1.1 1998/08/20 11:31:14 joe Exp $
 #
 # database specific definitions for an 'Adabas' database
 
@@ -90,16 +90,10 @@ sub TableDefinition ($@) {
 #
 sub ListTables(@) {
     my($dbh) = shift;
-    my ($sth) = $dbh->tables();
-    my(@tables);
-
-    if (!$sth) {
-	die "Cannot create table list: " . $dbh->errstr;
-    }
-
-    @tables = ();
-    while (@row = $sth->fetchrow) {
-	push(@tables, (lc $row[2]));
+    my @tables;
+    my $sth = $dbh->table_info() or die "table_info: " . $dbh->errstr();
+    foreach my $ref ($sth->fetchrow_arrayref()) {
+	push(@tables, $ref->[2]);
     }
     @tables;
 }
