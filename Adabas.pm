@@ -9,7 +9,7 @@
 
 require 5.004;
 
-$DBD::Adabas::VERSION = '0.2002';
+$DBD::Adabas::VERSION = '0.2003';
 
 {
     package DBD::Adabas;

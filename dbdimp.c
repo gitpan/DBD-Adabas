@@ -272,7 +272,11 @@ dbd_error(h, err_rc, what)
 	    fprintf(DBILOGFP, "dbd_error: err_rc=%d rc=%d s/d/e: %d/%d/%d\n", 
 	       err_rc, rc, hstmt,hdbc,henv);
 
+#if (ODBCVER >= 0x300)
+	if( (rc=SQLError(henv, hdbc, hstmt,
+#else
 	while( (rc=SQLError(henv, hdbc, hstmt,
+#endif
 		    sqlstate, &NativeError,
 		    ErrorMsg, sizeof(ErrorMsg)-1, &ErrorMsgLen
 		)) == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO
