@@ -9,7 +9,7 @@
 
 require 5.004;
 
-$DBD::Adabas::VERSION = '0.20';
+$DBD::Adabas::VERSION = '0.2001';
 
 {
     package DBD::Adabas;
@@ -219,6 +219,10 @@ See L<DBI> for more information.
 =head1 DESCRIPTION
 
 =head2 Recent Updates
+
+=item DBD::Adabas 0.21
+
+Fixed blob handling.
 
 =item DBD::ODBC 0.20
 

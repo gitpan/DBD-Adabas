@@ -74,10 +74,12 @@ while (Testing()) {
     Test($state or $table = FindNewTable($dbh))
 	   or DbiError($dbh->error, $dbh->errstr);
 
-    foreach $size (127) {
+    foreach $size (127, 128, 256, 512, 1024) {
 	#
 	#   Create a new table
 	#
+	if (!$state) { print "Blob size: ", $size * 256, "\n" }
+
 	Test($state or ($def = TableDefinition($table,
 					  ["id",   "INTEGER",      4, 0],
 					  ["name", "BLOB",     $size, 0]),
@@ -106,7 +108,9 @@ while (Testing()) {
         Test($state or
 	     ($sth = $dbh->prepare("INSERT INTO $table VALUES(1, ?)")))
 	       or DbiError($dbh->err, $dbh->errstr);
-	Test($state or $sth->execute($blob))
+	Test($state or $sth->bind_param(1, $blob, DBI::SQL_LONGVARBINARY()))
+	    or DbiError($sth->err, $sth->errstr);
+	Test($state or $sth->execute())
 	    or DbiError($sth->err, $sth->errstr);
 	Test($state or $sth->finish)
 	    or DbiError($sth->err, $sth->errstr);
@@ -114,7 +118,7 @@ while (Testing()) {
 	#
 	#   Now, try SELECT'ing the row out.
 	#
-	$dbh->{LongReadLen} = 40000;
+	$dbh->{LongReadLen} = length($blob)+1;
 	Test($state or $cursor = $dbh->prepare("SELECT id, name FROM $table"
 					       . " WHERE id = 1"))
 	       or DbiError($dbh->err, $dbh->errstr);

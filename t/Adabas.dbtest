@@ -13,7 +13,7 @@ sub AnsiTypeToDb ($;$) {
     my ($ret);
 
     if ((lc $type) eq 'blob') {
-	$ret = 'LONG';
+	$ret = 'LONG BYTE';
     } elsif ((lc $type) eq 'int'  ||  (lc $type) eq 'integer') {
 	$ret = $type;
     } elsif ((lc $type) eq 'char') {

@@ -113,17 +113,8 @@ TESTING
 
     make test
   
-    You'll note that two test scripts will fail. As far as I know these
-    are bugs in the ODBC driver, in particular:
-
-	- NUL bytes aren't treated appropriately when using
-
-	    $sth = $dbh->prepare("INSERT INTO $table VALUES (?, ?)");
-	    $sth->bind_param(1, $id, { TYPE = &DBI::SQL_INTEGER });
-	    $sth->bind_param(2, $blob, { TYPE = &DBI::SQL_LONGVARBINARY });
-	    $sth->execute();
-
-	  This makes test 11 in t/40blobs.t failing.
+    You'll note that one test script will fail. As far as I know this
+    is a bug in the ODBC driver:
 
 	- Field attributes seem to be incorrect; when creating a table
 	  with
@@ -134,13 +125,6 @@ TESTING
 
 	  the both fields are reported as Nullable by the ODBC driver.
 	  This breaks test 8 in t/40listfields.t.
-
-    Btw, one word to the support policy of SAG: I and other people have
-    tried heaviliy, to get any support on the above problems, having
-    contact to employees of SAG, employees of SQL (a german company
-    formerly maintaining the ODBC drivers) or Adabas distributors -
-    without the slightest success. THIS DRIVER IS NOT SUPPORTED BY
-    SAG.
 
 
 IF YOU HAVE PROBLEMS:

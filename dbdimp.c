@@ -855,6 +855,28 @@ dbd_st_execute(sth, imp_sth)	/* <= -2:error, >=0:ok row count, (-1=unknown count
 			imp_sth->hstmt);
 
     rc = SQLExecute(imp_sth->hstmt);
+    while (rc == SQL_NEED_DATA) {
+        phs_t* phs;
+	STRLEN len;
+	UCHAR* ptr;
+
+        if ((rc = SQLParamData(imp_sth->hstmt, (PTR*) &phs))
+	    !=  SQL_NEED_DATA) {
+	    break;
+	}
+
+	/* phs->sv is already upgraded to a PV in _dbd_rebind_ph.
+	 * It is not NULL, because we otherwise won't be called here
+	 * (value_len = 0).
+	 */
+	ptr = SvPV(phs->sv, len);
+	rc = SQLPutData(imp_sth->hstmt, ptr, len);
+	if (!SQL_ok(rc)) {
+	    break;
+	}
+	rc = SQL_NEED_DATA;  /*  So the loop continues ...  */
+    }
+
     if (!SQL_ok(rc)) {
 	dbd_error(sth, rc, "st_execute/SQLExecute");
 	return -2;
@@ -1178,6 +1200,8 @@ _dbd_rebind_ph(sth, imp_sth, phs, maxlen)
     if (fCType == SQL_C_CHAR) {	/* could be changed by bind_plh */
 	switch(phs->sql_type) {
 	case SQL_LONGVARBINARY:
+	case SQL_BINARY:
+	case SQL_VARBINARY:
 	    fCType = SQL_C_BINARY;
 	    break;
 	case SQL_LONGVARCHAR:
@@ -1205,38 +1229,21 @@ _dbd_rebind_ph(sth, imp_sth, phs, maxlen)
  	    phs->name, fCType, S_SqlTypeToString(phs->sql_type),
  	    cbColDef, ibScale, cbValueMax);
 
-#if SQLBINDPARAMETER_IBSCALE_CALCULATION
-    switch (phs->sql_type) {
-      /*
-      case SQL_CHAR:
-      case SQL_VARCHAR:
-      case SQL_LONGVARCHAR:
-      case SQL_BIT:
-      case SQL_TINYINT:
-      case SQL_SMALLINT:
-      case SQL_INTEGER:
-      case SQL_BIGINT:
-      case SQL_REAL:
-      case SQL_FLOAT:
-      case SQL_DOUBLE:
-      case SQL_BINARY:
-      case SQL_VARBINARY:
-      case SQL_LONGVARBINARY:
-      case SQL_DATE:
-      case SQL_TIME:
-      */
-      default:
-	ibScale = 0;
-	break;
-      case SQL_TIMESTAMP:
-      case SQL_DECIMAL:
-      case SQL_NUMERIC:
-	ibScale = value_len;
-	break;
+    if (value_len < 32768) {
+        ibScale = value_len;
+    } else {
+        /* This exceeds the positive size of an SWORD, so we have to use
+	 * SQLPutData.
+	 */
+        ibScale = 32767;
+	phs->cbValue = SQL_LEN_DATA_AT_EXEC(value_len);
+	/* This is lazyness!
+	 *
+	 * The ODBC docs declare rgbValue as a 32 bit value. May be this
+	 * breaks on 64 bit machines?
+	 */
+	rgbValue = (UCHAR*) phs;
     }
-#else
-    ibScale = value_len;
-#endif
     rc = SQLBindParameter(imp_sth->hstmt,
 	phs->idx, fParamType, fCType, phs->sql_type,
 	cbColDef, ibScale,
