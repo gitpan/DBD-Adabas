@@ -1,15 +1,15 @@
-# $Id: Adabas.pm,v 1.2 1998/07/14 10:55:08 joe Exp $
+# $Id: Adabas.pm,v 1.2 1998/07/14 10:55:08 joe Exp joe $
 #
 # Copyright (c) 1994,1995,1996,1998  Tim Bunce
-# portions Copyright (c) 1997        Thomas K. Wenrich
 # portions Copyright (c) 1997,1998   Jeff Urlwin
+# portions Copyright (c) 1997  Thomas K. Wenrich
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
 
 require 5.004;
 
-$DBD::Adabas::VERSION = '0.17';
+$DBD::Adabas::VERSION = '0.19';
 
 {
     package DBD::Adabas;
@@ -19,8 +19,8 @@ $DBD::Adabas::VERSION = '0.17';
 
     @ISA = qw(DynaLoader);
 
-    $VERSION = '0.17';
-    my $Revision = substr(q$Revision: 1.2 $, 10);
+    $VERSION = '0.19';
+    my $Revision = substr(q$Revision: 1.10 $, 10);
 
     require_version DBI 0.86;
 
@@ -208,6 +208,11 @@ see DBI for more information.
 =head1 DESCRIPTION
 
 =head2 Recent Updates
+
+=item DBD::Adabas 0.18
+
+Enhancements to build process. Better handling of errors in
+error handling code.
 
 =item DBD::Adabas 0.17
 

@@ -49,3 +49,6 @@ t/skeleton.test
 t/ODBCTEST.pm
 mytest/listtabs.pl
 mytest/testfunc.pl
+iodbcsrc/odbc_src.tar.gz
+iodbcsrc/isql.h
+iodbcsrc/isqlext.h
