@@ -2,7 +2,7 @@ DBD::Adabas -- DBD module interfacing the Adabas D database.
 
 This module is based on DBD::ODBC:
 
-   $Id: README,v 1.1 1998/04/22 17:42:33 joe Exp $
+   $Id: README,v 1.2 1998/07/14 10:55:08 joe Exp $
    Copyright (c) 1994,1995,1996,1997  Tim Bunce
    portions Copyright (c) 1997 Jeff Urlwin
    portions Copyright (c) 1997 Thomas K. Wenrich
@@ -20,6 +20,31 @@ THIS IS MOSTLY ALPHA SOFTWARE. Your mileage may vary.
 Most of the code (and most parts of this README) were stolen from the 
 DBD-Solid distribution.  I suspect most problems you may encounter with
 this release are related to my efforts to port it to straight ODBC.
+
+
+WHAT IS IT:
+===========
+
+This is the DBD::Adabas module. In fact it is DBD::ODBC, but I (Jochen
+Wiedmann) have picked up the original DBD::ODBC, incorporated the changes
+that have been required for Adabas (and which have been included into
+DBD::ODBC by Jeff Urlwin in the meantime, so you even won't need
+changes) and modified the drivers name.
+
+The reason for installing under a separate name is this: When installing
+under the name DBD::ODBC, you cannot install another database driver
+under the same name. The optimal solution, from my point of view, would
+be if DBD::ODBC would offer itself to choose the module name. However,
+we can live with the current situation.
+
+Another reason is, that Adabas (or at least the Adabas ODBC driver) in
+some cases has quite strange restrictions, that make the ODBC test suite
+fail: For example, a LONG column must be inserted via bind_param() and
+not via quote(). Another example is, that GetInfo() offers a length of
+VARCHAR(4000), but result columns are restricted to a total length of
+4048 bytes, making this size almost useless. Finally the SQLBindParam()
+function refuses a scale of 32768 bytes, because it is interpreted as
+a signed word ... lots of trouble. :-(
 
 
 REQUIREMENTS:
@@ -71,14 +96,12 @@ BUILDING:
     If you want to create a static perl for debugging purposes, do the
     following:
 
-	SHOW_ODBC_PROBLEMS=1
-	export SHOW_ODBC_PROBLEMS
-	perl Makefile.PL OPTIMIZE=-g
+	perl Makefile.PL
 	make
 	make perl
 
-    The last command will fail in the linker stage. To finish, just
-    repeat the last $(CC) or $(LD) command and add the following
+    The last command will probably fail in the linker stage. To finish,
+    just repeat the last $(CC) or $(LD) command and add the following
     flags:
 
 	cc ... -L/opt/adabas/lib /opt/adabas/lib/odbclib.a -lsqlrte -lsqlptc
@@ -95,10 +118,10 @@ TESTING
 
 	- NUL bytes aren't treated appropriately when using
 
-		$sth = $dbh->prepare("INSERT INTO $table VALUES (?, ?)");
-		$sth->bind_param(1, $id, { TYPE = &DBI::SQL_INTEGER });
-		$sth->bind_param(2, $blob, { TYPE = &DBI::SQL_VARBINARY });
-		$sth->execute();
+	    $sth = $dbh->prepare("INSERT INTO $table VALUES (?, ?)");
+	    $sth->bind_param(1, $id, { TYPE = &DBI::SQL_INTEGER });
+	    $sth->bind_param(2, $blob, { TYPE = &DBI::SQL_LONGVARBINARY });
+	    $sth->execute();
 
 	  This makes test 11 in t/40blobs.t failing.
 
@@ -111,6 +134,13 @@ TESTING
 
 	  the both fields are reported as Nullable by the ODBC driver.
 	  This breaks test 8 in t/40listfields.t.
+
+    Btw, one word to the support policy of SAG: I and other people have
+    tried heaviliy, to get any support on the above problems, having
+    contact to employees of SAG, employees of SQL (a german company
+    formerly maintaining the ODBC drivers) or Adabas distributors -
+    without the slightest success. THIS DRIVER IS NOT SUPPORTED BY
+    SAG.
 
 
 IF YOU HAVE PROBLEMS:
@@ -131,6 +161,7 @@ may take a few days to be processed).
 Please post details of any problems (or changes you needed to make) to
 dbi-users@fugue.com and CC them to joe@ispsoft.de and
 jurlwin@access.digex.net. But note...
+
 
 ** IT IS IMPORTANT TO INCLUDE THE FOLLOWING INFORMATION:
 
@@ -156,8 +187,17 @@ Regards,
 Tim, Jeff and Jochen
 
 ===============================================================================
-Examples and other info:
+Other info:
 
 DBI 'home page': http://www.hermetica.com/technologia/DBI
+
+perldoc DBI
+perldoc DBD::ODBC
 Jeff's 'home page' : http://www.access.digex.net/~jurlwin
+
+Win32 ODBC drivers:
+http://www.microsoft.com/support/products/backoffice/odbc/
+Follow "Microsoft ODBC Desktop Database Drivers 3.5 For 32-Bit Programs"
+and "ODBC Drivers for Win95 Applications".
+For Access use version "Access ODBC driver 3.40.2111 27/03/96" or later.
 

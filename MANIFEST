@@ -3,11 +3,13 @@ Adabas.pm
 Adabas.xs
 Changes
 MANIFEST
+MANIFEST.SKIP
 Makefile.PL
 README
 dbdimp.c
 dbdimp.h
-dbimon
+fixup_c.h
+fixup_t.h
 t/00base.t
 t/01base.t
 t/02simple.t
@@ -44,4 +46,6 @@ t/mysql2.t
 t/pNET.dbtest
 t/pNET.mtest
 t/skeleton.test
+t/ODBCTEST.pm
 mytest/listtabs.pl
+mytest/testfunc.pl

@@ -1,5 +1,5 @@
 /*
- * $Id: dbdimp.h,v 1.1 1998/04/22 17:42:33 joe Exp $
+ * $Id: dbdimp.h,v 1.2 1998/07/14 10:55:08 joe Exp $
  * Copyright (c) 1997 Jeff Urlwin
  * portions Copyright (c) 1997  Thomas K. Wenrich
  * portions Copyright (c) 1994,1995,1996  Tim Bunce
@@ -8,6 +8,11 @@
  * License or the Artistic License, as specified in the Perl README file.
  *
  */
+
+/* work around for perl5.004_6x+ */
+#ifdef uid
+#undef uid
+#endif
 
 typedef struct imp_fbh_st imp_fbh_t;
 

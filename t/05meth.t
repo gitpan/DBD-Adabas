@@ -33,8 +33,7 @@ if ($sth->err)
     {
     print ' $sth->err: ', $sth->err, "\n";
     print ' $sth->errstr: ', $sth->errstr, "\n";
-    print ' $dbh->state: ', $dbh->state, "\n";
-#    print ' $sth->state: ', $sth->state, "\n";
+    print ' $sth->state: ', $sth->state, "\n";
     }
 $sth->finish();
 print "ok 4\n";
@@ -79,6 +78,13 @@ print "ok 6\n";
 
 $sth->finish();
 
+# turn off error warnings.  We expect one here (invalid transaction state)
+$dbh->{RaiseError} = 0;
+$dbh->{PrintError} = 0;
+my $errExpected = ($dbh->{ImplementorClass} ne "DBD::Adabas::db");
 $dbh->disconnect();
 
-BEGIN { $::tests = 6; }
+# make sure there is an invalid transaction state error at the end here.
+print "not " if $DBI::err  &&  $DBI::err ne "25000" && $errExpected;
+print "ok 7\n"; 
+BEGIN { $::tests = 7; }

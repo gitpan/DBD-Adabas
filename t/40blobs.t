@@ -74,7 +74,7 @@ while (Testing()) {
     Test($state or $table = FindNewTable($dbh))
 	   or DbiError($dbh->error, $dbh->errstr);
 
-    foreach $size (128) {
+    foreach $size (127) {
 	#
 	#   Create a new table
 	#
@@ -106,9 +106,7 @@ while (Testing()) {
         Test($state or
 	     ($sth = $dbh->prepare("INSERT INTO $table VALUES(1, ?)")))
 	       or DbiError($dbh->err, $dbh->errstr);
-	Test($state or $sth->bind_param(1, $blob, { TYPE => &DBI::SQL_VARBINARY}))
-	    or DbiError($sth->err, $sth->errstr);
-	Test($state or $sth->execute)
+	Test($state or $sth->execute($blob))
 	    or DbiError($sth->err, $sth->errstr);
 	Test($state or $sth->finish)
 	    or DbiError($sth->err, $sth->errstr);

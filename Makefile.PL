@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -sw
 #
-# $Id: Makefile.PL,v 1.1 1998/04/22 17:42:33 joe Exp $
+# $Id: Makefile.PL,v 1.2 1998/07/14 10:55:08 joe Exp $
 #
 # You may distribute under the terms of either the GNU General Public
 # License or the Artistic License, as specified in the Perl README file.
@@ -8,8 +8,9 @@
 BEGIN { require 5.004 }	# 5.004 is required for Win32
 use Config;
 use ExtUtils::MakeMaker 5.16, qw(&WriteMakefile $Verbose);
-use DBI 0.89;		# must be installed first
+use DBI 0.93;		# must be installed first
 use DBI::DBD;
+use Getopt::Long;
 use strict;
 
 if (!exists($ENV{'DBROOT'})) {
@@ -28,9 +29,13 @@ my %opts =
 		PREOP    => '$(MAKE) -f Makefile.old distdir',
 		COMPRESS => 'gzip', SUFFIX => 'gz'
 	    },
-    'OBJECT'    => qw( $(O_FILES) ),
-#   'OPTIMIZE'  => '-g -O0',
+    OBJECT	=> '$(O_FILES)',
 );
+
+$::opt_g = 0;
+GetOptions(qw(g!)) or die "Invalid arguments";
+
+$opts{OPTIMIZE} = '-g -O0' if $::opt_g;
 
 
 print "\nConfiguring DBD::Adabas ...\n
@@ -65,12 +70,26 @@ else {
 	print "Configuring for Adabas ...\n";
 	$odbc = $ENV{DBROOT};
 	$myodbc = "adabas";
+	if ($^O =~ /solaris/) {
+	    $opts{LIBS} = ["-lcurses"]; # Brain damaged, I know ...
+	}
     } else {
 	$odbc= $ENV{ODBCHOME} || die "ODBCHOME env var not set\n";
-	$myodbc = 'iodbc';	# edit and hack to suit!
 
-	$ENV{LD_LIBRARY_PATH} =~ /\Q$odbc/ || die "LD_LIBRARY_PATH doesn't include $odbc\n";
+	my $myodbc = 'iodbc';	# edit and hack to suit!
+	
+	$myodbc = 'empress'
+	    if <$odbc/lib/libempodbc.*>;
+	$myodbc = 'intersolve'
+	    if -f "$odbc/include/qeodbc.h" && -f "$odbc/include/sql.h";
+	$myodbc = 'adabas'
+	    if $ENV{DBROOT} && $odbc eq $ENV{DBROOT} && -f "$odbc/lib/odbclib.a";
+	
+	warn "Umm, this looks like a $myodbc driver manager\n";
+
 	warn "Using ODBC in $odbc\n";
+	$ENV{LD_LIBRARY_PATH} =~ /\Q$odbc/
+	    || warn "Warning: LD_LIBRARY_PATH doesn't include $odbc\n";
     }
 
     my $lib_d1 = "$odbc/lib";
@@ -90,28 +109,42 @@ else {
 	print SQLH "#define FAR \n#define EXPORT \n#define CALLBACK \n";
 	print SQLH "#include <isql.h>\n";
         print SQLH "#include <isqlext.h>\n";
+	print SQLH "#include \"fixup_t.h\"\n";
     } elsif ($myodbc eq 'intersolve') {
 	$opts{INC} .= " -I$ENV{ODBCHOME}/include";
 	$opts{DEFINE}  = "";
 	print SQLH "#include <qeodbc.h>\n";
 	print SQLH "#include <sql.h> \n#include <sqlext.h>\n";
+    } elsif ($myodbc eq 'empress') {
+ 	$opts{INC} .= " -I".$odbc."/include";
+ 	$opts{DEFINE}  = "";
+ 	print SQLH "#include <odbcsys.h>\n#include <sql.h> \n#include <sqlext.h>\n";
+	$opts{LIBS} = "-L$odbc/lib -R$odbc/lib -lempodbc";
     } elsif ($myodbc eq 'adabas') {
-	print SQLH "#define FAR \n#define EXPORT \n#define CALLBACK \n";
-	print SQLH "#include <WINDOWS.H>\n";
-	print SQLH "#include <sql.h>\n";
-	print SQLH "#include <sqlext.h>\n";
-	print SQLH "#define SQLBINDPARAMETER_IBSCALE_CALCULATION 1\n";
-        $opts{INC} .= " -I$odbc/incl";
-	$opts{LIBS} = "-L$odbc/lib -lsqlrte -lsqlptc";
-	$opts{LDFROM} = "\$(OBJECT) $odbc/lib/odbclib.a";
-	if (exists($ENV{'SHOW_ODBC_PROBLEMS'})) {
-	    $opts{DEFINE} = "-DSHOW_ODBC_PROBLEMS=1"
-	}
+ 	print SQLH "#define FAR \n#define EXPORT \n#define CALLBACK \n";
+ 	print SQLH "#define ADABAS_ODBC \n";
+ 	print SQLH "#include <WINDOWS.H>\n";
+ 	print SQLH "#include <sql.h>\n";
+ 	print SQLH "#include <sqlext.h>\n";
+	print SQLH "#include \"fixup_t.h\"\n";
+ 	$opts{INC} .= " -I$odbc/incl";
+ 	$opts{LIBS} = "-L$odbc/lib -lsqlrte -lsqlptc";
+ 	$opts{LDFROM} = "\$(OBJECT) $odbc/lib/odbclib.a";
     } else {
+ 	print "\n*** WARNING ***\a\n";
+ 	print "Unknown driver manager. Using default build process.\n";
+	print "This will almost certainly fail at some point.\n";
+ 	print "In which case you will need to edit/hack the Makefile.PL\n";
+ 	print "to suit your needs. (Specifically to locate your odbc\n";
+ 	print "library and header files.)\n\n";
 	$opts{DEFINE}  = "";
 	print SQLH "#include <sql.h> \n#include <sqlext.h>\n";
     }
 }
+
+print SQLH "\n";
+print SQLH "#include \"fixup_c.h\"\n";
+print SQLH "\n";
 print SQLH "\n";
 close(SQLH);
 
@@ -128,10 +161,10 @@ print "Warning: not all required environment variables are set.\n"
 	unless ($ENV{DBI_DSN} && $ENV{DBI_USER} && $ENV{DBI_PASS});
 print "Warning: DBI_DSN ($ENV{DBI_DSN}) doesn't start with 'dbi:Adabas:'\n"
 	if ($ENV{DBI_DSN} && $ENV{DBI_DSN} !~ m/^[dD][bB][iI]:Adabas:/);
-
+print "\n";
 
 sub MY::postamble {
-    return dbd_postamble();
+    return dbd_postamble(@_);
 }
 
 __END__
