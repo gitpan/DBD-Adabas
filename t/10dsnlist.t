@@ -46,7 +46,13 @@ while (Testing()) {
 					$test_password)))
 	or ServerError();
 
-    Test($state or defined(@dsn = DBI->data_sources($mdriver)));
+    my @dsn;
+    if (!$state) {
+	@dsn = DBI->data_sources($mdriver);
+    }
+
+    Test($state or !$DBI::errstr)
+	or print "Error in data_sources method: $DBI::errstr\n";
     if (!$state  &&  $verbose) {
 	my $d;
 	print "List of $mdriver data sources:\n";

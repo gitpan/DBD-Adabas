@@ -75,12 +75,15 @@ _GetInfo(dbh, ftype)
 	ST(0) = adabas_get_info(dbh, ftype);
 
 void
-_GetTypeInfo(dbh, sth, ftype)
+_GetTypeInfo(dbh, sth, ftype=NULL)
 	SV *	dbh
 	SV *	sth
-	int		ftype
+	SV *	ftype
 	CODE:
-	ST(0) = adabas_get_type_info(dbh, sth, ftype) ? &sv_yes : &sv_no;
+	ST(0) = adabas_get_type_info(dbh, sth,
+				     (ftype && SvOK(ftype)) ? SvIV(ftype)
+							    : SQL_ALL_TYPES)
+	     		? &sv_yes : &sv_no;
 
 #
 # Corresponds to ODBC 2.0.  3.0's SQL_API_ODBC3_ALL_FUNCTIONS will break this
@@ -105,7 +108,59 @@ GetFunctions(dbh, func)
 	    }
 	}
 
-MODULE = DBD::Adabas    PACKAGE = DBD::Adabas::db
+MODULE = DBD::Adabas    PACKAGE = DBD::Adabas::dr
 
+void
+data_sources(drh, attr = NULL)
+    SV* drh;
+    SV* attr;
+  PROTOTYPE: $;$
+  PPCODE:
+    {
+	int numDataSources = 0;
+	UWORD fDirection = SQL_FETCH_FIRST;
+	RETCODE rc;
+        UCHAR dsn[SQL_MAX_DSN_LENGTH+1+11 /* strlen("DBI:Adabas:") */];
+        SWORD dsn_length;
+        UCHAR description[256];
+        SWORD description_length;
+	D_imp_drh(drh);
+	HENV henv;
 
+	if (!imp_drh->connects) {
+	    rc = SQLAllocEnv(&imp_drh->henv);
+	    if (!SQL_ok(rc)) {
+		imp_drh->henv = SQL_NULL_HENV;
+		adabas_error(drh, rc, "data_sources/SQLAllocEnv");
+		XSRETURN(0);
+	    }
+	}
+        strcpy(dsn, "DBI:Adabas:");
+	while (1) {
+            rc = SQLDataSources(imp_drh->henv, fDirection,
+                                dsn+11, /* strlen("DBI:Adabas:") */
+                                sizeof(dsn), &dsn_length,
+                                description, sizeof(description),
+                                &description_length);
+       	    if (!SQL_ok(rc)) {
+                if (rc != SQL_NO_DATA_FOUND) {
+		    /*
+		     *  Temporarily increment imp_drh->connects, so
+		     *  that adabas_error uses our henv.
+		     */
+		    imp_drh->connects++;
+		    adabas_error(drh, rc, "data_sources/SQLDataSources");
+		    imp_drh->connects--;
+                }
+                break;
+            }
+            ST(numDataSources++) = newSVpv(dsn, dsn_length);
+	    fDirection = SQL_FETCH_NEXT;
+	}
+	if (!imp_drh->connects) {
+	    SQLFreeEnv(imp_drh->henv);
+	    imp_drh->henv = SQL_NULL_HENV;
+	}
+	XSRETURN(numDataSources);
+    }
 

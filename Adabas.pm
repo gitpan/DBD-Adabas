@@ -9,7 +9,7 @@
 
 require 5.004;
 
-$DBD::Adabas::VERSION = '0.2001';
+$DBD::Adabas::VERSION = '0.2002';
 
 {
     package DBD::Adabas;
@@ -77,18 +77,6 @@ $DBD::Adabas::VERSION = '0.2001';
 
 	$this;
     }
-
-    sub type_info_all {
-	my ($dbh, $sqltype) = @_;
-	my $sth = DBI::_new_sth($dbh, { 'Statement' => "SQLGetTypeInfo" });
-	_GetTypeInfo($dbh, $sth, $sqltype) or return undef;
-	my $info = $sth->fetchall_arrayref;
-	unshift @$info, {
-	    map { ($sth->{NAME}->[$_] => $_) } 0..$sth->{NUM_OF_FIELDS}-1
-	};
-	return $info;
-    }
-
 }
 
 
@@ -184,6 +172,17 @@ $DBD::Adabas::VERSION = '0.2001';
 	}
 	$str =~ s/\'/\'\'/g;
 	"'$str'";
+    }
+
+    sub type_info_all {
+	my ($dbh, $sqltype) = @_;
+	my $sth = DBI::_new_sth($dbh, { 'Statement' => "SQLGetTypeInfo" });
+	_GetTypeInfo($dbh, $sth, $sqltype) or return undef;
+	my $info = $sth->fetchall_arrayref;
+	unshift @$info, {
+	    map { ($sth->{NAME}->[$_] => $_) } 0..$sth->{NUM_OF_FIELDS}-1
+	};
+	return $info;
     }
 }
 

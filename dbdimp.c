@@ -20,7 +20,7 @@ static const char *cSqlGetTypeInfo = "SQLGetTypeInfo(%d)";
 /* for sanity/ease of use with potentially null strings */
 #define XXSAFECHAR(p) ((p) ? (p) : "(null)")
 
-static void dbd_error _((SV *h, RETCODE err_rc, char *what));
+void dbd_error _((SV *h, RETCODE err_rc, char *what));
 
 DBISTATE_DECLARE;
 
@@ -208,7 +208,7 @@ dbd_db_rollback(dbh, imp_dbh)
   replacement for ora_error.
   empties entire ODBC error queue.
 ------------------------------------------------------------*/
-static void
+void
 dbd_error(h, err_rc, what)
     SV *h;
     RETCODE err_rc;
@@ -217,9 +217,7 @@ dbd_error(h, err_rc, what)
     D_imp_xxh(h);
     dTHR;
 
-    struct imp_dbh_st *imp_dbh = NULL;
-    struct imp_sth_st *imp_sth = NULL;
-    HENV henv = SQL_NULL_HENV;
+    HENV henv;
     HDBC hdbc = SQL_NULL_HDBC;
     HSTMT hstmt = SQL_NULL_HSTMT;
     SV *errstr;
@@ -228,19 +226,33 @@ dbd_error(h, err_rc, what)
 	return;
 
     switch(DBIc_TYPE(imp_xxh)) {
+    case DBIt_DR:
+      {
+	imp_drh_t* imp_drh = (imp_drh_t *) imp_xxh;
+        henv = imp_drh->connects ? imp_drh->henv : SQL_NULL_HENV;
+	hdbc = SQL_NULL_HDBC;
+	hstmt = SQL_NULL_HSTMT;
+	break;
+      }
+    case DBIt_DB:
+      {
+        imp_dbh_t* imp_dbh = (imp_dbh_t *) imp_xxh;
+	henv = imp_dbh->henv;
+	hdbc = imp_dbh->hdbc;
+	hstmt = SQL_NULL_HSTMT;
+	break;
+      }
     case DBIt_ST:
-	imp_sth = (struct imp_sth_st *)(imp_xxh);
-	imp_dbh = (struct imp_dbh_st *)(DBIc_PARENT_COM(imp_sth));
+      { imp_sth_t* imp_sth = (imp_sth_t *) imp_xxh;
+	imp_dbh_t* imp_dbh = (imp_dbh_t *)(DBIc_PARENT_COM(imp_sth));
+	henv = imp_dbh->henv;
+	hdbc = imp_dbh->hdbc;
 	hstmt = imp_sth->hstmt;
 	break;
-    case DBIt_DB:
-	imp_dbh = (struct imp_dbh_st *)(imp_xxh);
-	break;
+      }
     default:
 	croak("panic: dbd_error on bad handle type");
     }
-    hdbc = imp_dbh->hdbc;
-    henv = imp_dbh->henv;
 
     errstr = DBIc_ERRSTR(imp_xxh);
     sv_setpvn(errstr, "", 0);
@@ -261,8 +273,8 @@ dbd_error(h, err_rc, what)
 	       err_rc, rc, hstmt,hdbc,henv);
 
 	while( (rc=SQLError(henv, hdbc, hstmt,
-			  sqlstate, &NativeError,
-			  ErrorMsg, sizeof(ErrorMsg)-1, &ErrorMsgLen
+		    sqlstate, &NativeError,
+		    ErrorMsg, sizeof(ErrorMsg)-1, &ErrorMsgLen
 		)) == SQL_SUCCESS || rc == SQL_SUCCESS_WITH_INFO
 	) {
 	    sv_setpvn(DBIc_STATE(imp_xxh), sqlstate, 5);

@@ -103,6 +103,7 @@ struct phs_st {  	/* scalar placeholder EXPERIMENTAL	*/
 
 /* These defines avoid name clashes for multiple statically linked DBD's        */
 
+#define dbd_error		adabas_error
 #define dbd_init		adabas_init
 #define dbd_db_login		adabas_db_login
 #define dbd_db_do		adabas_db_do

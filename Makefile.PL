@@ -20,6 +20,8 @@ if (!exists($ENV{'DBROOT'})) {
     exit 1;
 }
 
+my($myodbc, $odbchome);
+
 my %opts = 
 (
     'NAME'	=> 'DBD::Adabas',
@@ -76,7 +78,7 @@ else {
     # for Adabas
     $ENV{ODBCHOME} = $ENV{DBROOT} if $ENV{DBROOT} && -f "$ENV{DBROOT}/lib/odbclib.a";
 
-    my $odbchome = $::opt_o || $ENV{ODBCHOME};
+    $odbchome = $::opt_o || $ENV{ODBCHOME};
     unless ($odbchome) {
 	print "\n";
 	print "The DBD::ODBC module needs to link with an ODBC 'Driver Manager'.\n";
@@ -102,7 +104,7 @@ else {
     my $libs   = "odbc";
     $opts{LIBS} = " -L$lib_d1 -R$lib_d1 -L$lib_d2 -R$lib_d2 -l$libs";
 
-    my $myodbc = '';	# edit and hack to suit!
+    $myodbc = '';	# edit and hack to suit!
 
     $myodbc = 'iodbc'
 		if <$odbchome/*iodbc*>;
@@ -180,7 +182,6 @@ else {
 	print SQLH qq{#include "fixup_t.h"\n};
 	$opts{INC} .= " -I$odbchome/incl";
 	$opts{LIBS} = "-L$odbchome/lib -lsqlrte -lsqlptc";
-	$opts{LDFROM} = "\$(OBJECT) $odbchome/lib/odbclib.a";
     }
     else {
  	print "\n*** WARNING ***\a\n";
@@ -216,10 +217,32 @@ print "Warning: DBI_DSN ($ENV{DBI_DSN}) doesn't start with 'dbi:Adabas:'\n"
 	if ($ENV{DBI_DSN} && $ENV{DBI_DSN} !~ m/^[dD][bB][iI]:Adabas:/);
 print "\n";
 
-sub MY::postamble {
-    return dbd_postamble(@_);
+
+package MY;
+
+sub postamble {
+    return DBI::DBD::dbd_postamble(@_);
+}
+
+sub const_loadlibs {
+    my $self = shift;
+    my $str = $self->SUPER::const_loadlibs(@_);
+    # Adabas ODBC is using the brain damaged name odbclib.a, which falls
+    # through ExtUtils::Liblist. We need to fix this manually. :-(
+    if ($myodbc eq 'adabas') {
+	$str =~ s/(-lsqlrte)/$odbchome\/lib\/odbclib.a $1/gs;
+    }
+    $str;
+}
+
+sub makeaperl {
+    my $self = shift;
+    my $str = $self->SUPER::makeaperl(@_);
+    # Rats! Need to link dynamic libraries into a static perl ... :-(
+    if ($myodbc eq 'adabas') {
+	$str =~ s/(MAP_LINKCMD\s*=\s*)/$1 LD_RUN_PATH=\"\$(LD_RUN_PATH)\" /s;
+    }
+    $str;
 }
 
 __END__
-
-

@@ -109,7 +109,7 @@ BUILDING:
     Don't ask me why SAG is using a brain damaged library name like
     odbclib.a ...
 
-TESTING
+TESTING AND KNOWN BUGS
 
     make test
   
@@ -125,6 +125,23 @@ TESTING
 
 	  the both fields are reported as Nullable by the ODBC driver.
 	  This breaks test 8 in t/40listfields.t.
+
+	- The Adabas ODBC driver doesn't support the SQLDataSources
+	  function, although it claims to do so. To quote
+	  doc/odbcinfo/odbc3.htm:
+
+		SQLDataSources
+
+		The Driver Manager administers this function.
+
+	  However, look at this:
+
+		perl -MDBI -e 'print DBI->data_sources("Adabas"),
+			       $DBI::errstr, "\n"'
+		[SOFTWARE AG][ODBCLIB A]Driver not capable. (SQL-S1C00)
+		(DBD: data_sources/SQLDataSources err=-1)
+
+	  This breaks test 2 in t/10dsnlist.t.
 
 
 IF YOU HAVE PROBLEMS:
